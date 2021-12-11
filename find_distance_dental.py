@@ -187,8 +187,8 @@ else:
 # mapper.SetScalarRange(0, 3)
 # mapper.SetScalarRange(0, 1)
 # mapper.SetScalarRange(0, 1.6)
-# mapper.SetScalarRange(0, 2)
-mapper.SetScalarRange(0, 2.4)
+mapper.SetScalarRange(0, 2)
+# mapper.SetScalarRange(0, 2.4)
 
 # Create own look up table with set colors
 hueLut = vtk.vtkLookupTable()
@@ -223,8 +223,8 @@ scalarBar.SetNumberOfLabels(6)
 # mapperb.SetScalarRange(0, 3)
 # mapperb.SetScalarRange(0, 1)
 # mapperb.SetScalarRange(0, 1.6)
-# mapperb.SetScalarRange(0, 2)
-mapperb.SetScalarRange(0, 2.4)
+mapperb.SetScalarRange(0, 2)
+# mapperb.SetScalarRange(0, 2.4)
 
 # Create own look up table with set colors for b
 hueLutb = vtk.vtkLookupTable()
@@ -285,8 +285,8 @@ clipMapper.ScalarVisibilityOn()
 # clipMapper.SetScalarRange(0, 3)
 # clipMapper.SetScalarRange(0, 1)
 # clipMapper.SetScalarRange(0, 1.6)
-# clipMapper.SetScalarRange(0, 2)
-clipMapper.SetScalarRange(0, 2.4)
+clipMapper.SetScalarRange(0, 2)
+# clipMapper.SetScalarRange(0, 2.4)
 clipMapper.SetLookupTable(hueLut)
 
 clipActor = vtk.vtkActor()
