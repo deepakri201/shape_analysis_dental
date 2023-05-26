@@ -51,8 +51,9 @@ def calculate_ICP(source, target):
     icp.GetLandmarkTransform().SetModeToRigidBody()
     #icp.DebugOn()
     # icp.SetMaximumNumberOfIterations(20)
-    icp.SetMaximumNumberOfIterations(150)
-    icp.StartByMatchingCentroidsOn()
+    # icp.SetMaximumNumberOfIterations(150) # are the impression and T2 actually aligned though??
+    icp.SetMaximumNumberOfIterations(500)
+    icp.StartByMatchingCentroidsOn() # added this back in 
     icp.Modified()
     icp.Update()
 
@@ -122,9 +123,16 @@ output_directory = os.path.join(os.getcwd(), 'results')
 if not os.path.isdir(output_directory):
   os.mkdir(output_directory)
 
+# save out the distance meshes 
 output_mesh_filename_T2_to_T1t = os.path.join(output_directory, 'distance_mesh_T2_to_T1t.vtk')
 output_mesh_filename_T2_to_impt = os.path.join(output_directory, 'distance_mesh_T2_to_impt.vtk')
 output_mesh_filename_T1t_to_impt = os.path.join(output_directory, 'distance_mesh_T1t_to_impt.vtk')
+
+# save out the transformed meshes too 
+output_mesh_filename_T1_transformed = os.path.join(output_directory, 'T1_transformed_to_T2.vtk')
+output_mesh_filename_imp_transformed = os.path.join(output_directory, 'imp_transformed_to_T2.vtk')
+
+
 # Write out to one text file 
 output_csv_filename = os.path.join(output_directory, 'mean_absolute_distance_in_mm.csv')
 # output_txt_filename_T2_to_T1t = 'mean_absolute_distance_in_mm_T2_to_T1t.txt'
@@ -164,6 +172,49 @@ reader3.SetFileName(mesh3_filename)
 reader3.Update()
 mesh3 = reader3.GetOutput()
 
+# Calculate center of mass 
+normals = vtk.vtkPolyDataNormals()
+normals.SetInputData(mesh3)
+normals.Update()
+pd = normals.GetOutput()
+com = vtk.vtkCenterOfMass()
+com.SetInputData(pd)
+com.SetUseScalarsAsWeights(False)
+com.Update()
+center = com.GetCenter()
+print ('center: ' + str(center))
+
+# First translate and apply 
+translation = [-center[0], -center[1], -center[2]]
+translate_transform = vtk.vtkTransform() 
+translate_transform.Translate(translation[0],translation[1],translation[2])
+translate_transform.Update()
+translate_filter = vtk.vtkTransformPolyDataFilter() 
+translate_filter.SetInputData(mesh3)
+translate_filter.SetTransform(translate_transform)
+translate_filter.Update() 
+translate_filter_mesh = translate_filter.GetOutput()
+
+rotate_transform = vtk.vtkTransform() 
+#rotate_transform.RotateY(180)
+rotate_transform.RotateX(180)
+rotate_transform.Update()
+rotate_filter = vtk.vtkTransformPolyDataFilter() 
+rotate_filter.SetInputData(translate_filter_mesh)
+rotate_filter.SetTransform(rotate_transform)
+rotate_filter.Update()
+rotate_filter_mesh = rotate_filter.GetOutput() 
+
+translate_transform = vtk.vtkTransform() 
+translate_transform.Translate(-translation[0],-translation[1],-translation[2])
+translate_transform.Update()
+translate_filter = vtk.vtkTransformPolyDataFilter() 
+translate_filter.SetInputData(rotate_filter_mesh)
+translate_filter.SetTransform(translate_transform)
+translate_filter.Update() 
+mesh3 = translate_filter.GetOutput()
+
+
 #########################################################################
 ### Set the mappers and actors ### 
 
@@ -192,6 +243,20 @@ mesh3t = calculate_ICP(mesh3, mesh2)
 distance_mesh_3t2, distances_3t2, mean_distance_3t2 = calculate_MAD(mesh2, mesh3t)
 
 distance_mesh_1t3t, distances_1t3t, mean_distance_1t3t = calculate_MAD(mesh1t, mesh3t)
+
+### save out transformed meshes ###
+
+polydata_writer = vtk.vtkPolyDataWriter()
+polydata_writer.SetFileName(output_mesh_filename_T1_transformed)
+polydata_writer.SetInputData(mesh1t)
+polydata_writer.Write()
+
+polydata_writer = vtk.vtkPolyDataWriter()
+polydata_writer.SetFileName(output_mesh_filename_imp_transformed )
+polydata_writer.SetInputData(mesh3t)
+polydata_writer.Write()
+
+output_mesh_filename_imp_transformed 
 
 ### get min and max distances and save distance meshes ### 
 
